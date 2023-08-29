@@ -16,6 +16,12 @@ async def jinqun(
     app: Ariadne,
     event: MemberJoinRequestEvent,
 ):
+    """检测到申请发送消息，并自动判断
+
+    Args:
+        app (Ariadne): 初始化
+        event (MemberJoinRequestEvent): 申请入群事件
+    """
     await app.send_group_message(
         event.source_group, MessageChain(f"申请人：{event.nickname}\n{event.message}")
     )
@@ -35,5 +41,7 @@ async def jinqun(
             "qq": event.supplicant,
             "message": event.message,
         }
+        # TODO: 生成一段时间内NAS机型的热门程度图表(得鸽好久)
+
         # 插入新的文档
         user.insert_one(user_add)

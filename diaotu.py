@@ -1,5 +1,6 @@
 import os
 import random
+import time
 
 import requests
 from graia.ariadne.app import Ariadne
@@ -26,7 +27,17 @@ SUPERADMIN = ["1582891850"]
 async def diaotu_upload(
     app: Ariadne, group: Group, message: MessageChain, member: Member
 ):
-    # 接收并保存草图
+    """上传草图
+
+    Args:
+        app (Ariadne): 初始化
+        group (Group): 发送的群
+        message (MessageChain): 接受到的消息
+        member (Member): 发送者
+
+    Returns:
+        _type_: _description_
+    """
     with MongoClient("mongodb://zxxhz:zxxhz@localhost:27017/") as client:
         admin = client.caotu.admin
         admin_search = {"qq": str(member.id)}
@@ -44,11 +55,29 @@ async def diaotu_upload(
             if image.display != "[图片]":
                 return "bad"
             image_url = image.get_first(Image).url
-            image_name = image.get_first(Image).id
-            r = requests.get(image_url, timeout=10)
-            with open(f"./{DIAOTU}/{image_name}", mode="wb") as f:
-                f.write(r.content)
-            return image
+            image_id = image.get_first(Image).id
+            # 连接数据库存入图片名字,并判断是否有重复的图片id
+            with MongoClient("mongodb://zxxhz:zxxhz@localhost:27017/") as client:
+                photo = client.caotu.photos
+                photo_add = {
+                    "time": time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
+                    "qun": group.id,
+                    "qq": member.id,
+                    "photo_name": image_id,
+                }
+
+                query = {"photo_name": photo_add["photo_name"]}
+                query_result = photo.your_collection_name.find_one(query)
+                if query_result:
+                    app.send_message(group, MessageChain(Plain("数据库中已存在相同的图片!")))
+                    return "bad"
+                # 如果不存在，则插入数据并保存图片
+                photo.insert_one(photo_add)
+                r = requests.get(image_url, timeout=10)
+                with open(f"./{DIAOTU}/{image_id}", mode="wb") as f:
+                    f.write(r.content)
+                # TODO: 以后添加给图片编号
+                return image
 
     result = await FunctionWaiter(waiter, [GroupMessage]).wait(timeout=60)
 
@@ -57,7 +86,7 @@ async def diaotu_upload(
         return
 
     if result == "bad":
-        await app.send_message(group, MessageChain(Plain(f"添加失败,请在发送“{UPLOAD}”后发送图片")))
+        await app.send_message(group, MessageChain(Plain("添加失败")))
         return
 
     await app.send_message(group, MessageChain(Plain("添加成功")))
@@ -67,9 +96,18 @@ async def diaotu_upload(
     ListenerSchema(listening_events=[GroupMessage], decorators=[DetectPrefix(KEY)])
 )
 async def diaotu_send(app: Ariadne, group: Group):
-    # 发送草图
+    """发送草图
+
+    Args:
+        app (Ariadne): 初始化
+        group (Group): 发送的群
+    """
     image_loacal = random.choice(os.listdir(f"./{DIAOTU}"))
-    with open(f"./{DIAOTU}/{image_loacal}", "rb") as f:
+    with MongoClient("mongodb://zxxhz:zxxhz@localhost:27017/") as client:
+        photo = client.caotu.photos
+        photo_name = list(photo.find().limit(1))[0]["photo_name"]
+
+    with open(f"./{DIAOTU}/{photo_name}", "rb") as f:
         image_bytes = f.read()
     await app.send_message(group, MessageChain(Image(data_bytes=image_bytes)))
 
@@ -81,7 +119,14 @@ async def admin_add(
     member: Member,
     message: MessageChain = DetectPrefix("添加管理员"),
 ):
-    # 添加管理员
+    """添加管理员
+
+    Args:
+        app (Ariadne): 初始化
+        group (Group): 发送的群
+        member (Member): 发送者
+        message (MessageChain, optional): 接收消息. 默认去除前缀("添加管理员").
+    """
     # 判断成员 ID 是否在超级管理员列表中，不在则继续执行
     if str(member.id) not in SUPERADMIN:
         return
