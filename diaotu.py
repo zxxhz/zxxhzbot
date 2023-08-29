@@ -1,5 +1,4 @@
 import os
-import random
 import time
 
 import requests
@@ -91,7 +90,7 @@ async def diaotu_upload(
     if result == "same":
         await app.send_message(group, MessageChain(Plain("数据库中已存在相同的图片!")))
         return
-        
+
     await app.send_message(group, MessageChain(Plain("添加成功")))
 
 
@@ -105,7 +104,6 @@ async def diaotu_send(app: Ariadne, group: Group):
         app (Ariadne): 初始化
         group (Group): 发送的群
     """
-    image_loacal = random.choice(os.listdir(f"./{DIAOTU}"))
     with MongoClient("mongodb://zxxhz:zxxhz@localhost:27017/") as client:
         photo = client.caotu.photos
         photo_name = list(photo.find().limit(1))[0]["photo_name"]
@@ -143,7 +141,10 @@ async def admin_add(
         # 获取 admin 集合
         admin = client.caotu.admin
         # 创建一个新的管理员文档，包含"qq"字段和相应的值
-        admin_add = {"qq": message}
+        admin_add = {
+            "time": time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
+            "qq": message,
+        }
         # 使用 find_one 方法查询集合中是否已存在该管理员，如果不存在则插入新的文档
         if admin.find_one(admin_add) is None:
             admin.insert_one(admin_add)
