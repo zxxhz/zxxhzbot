@@ -66,11 +66,10 @@ async def diaotu_upload(
                     "photo_name": image_id,
                 }
 
-                query = {"photo_name": photo_add["photo_name"]}
-                query_result = photo.your_collection_name.find_one(query)
+                query = {"photo_name": image_id}
+                query_result = photo.find_one(query)
                 if query_result:
-                    app.send_message(group, MessageChain(Plain("数据库中已存在相同的图片!")))
-                    return "bad"
+                    return "same"
                 # 如果不存在，则插入数据并保存图片
                 photo.insert_one(photo_add)
                 r = requests.get(image_url, timeout=10)
@@ -89,6 +88,10 @@ async def diaotu_upload(
         await app.send_message(group, MessageChain(Plain("添加失败")))
         return
 
+    if result == "same":
+        await app.send_message(group, MessageChain(Plain("数据库中已存在相同的图片!")))
+        return
+        
     await app.send_message(group, MessageChain(Plain("添加成功")))
 
 
