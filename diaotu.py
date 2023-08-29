@@ -153,3 +153,23 @@ async def admin_add(
             return
     # 如果已存在，则发送消息告知该管理员已存在
     await app.send_message(group, MessageChain(Plain("此管理员已存在数据库中")))
+
+
+@channel.use(
+    ListenerSchema(listening_events=[GroupMessage], decorators=[DetectPrefix("草图帮助")])
+)
+async def caotu_help(app: Ariadne, group: Group):
+    """草图帮助
+
+    Args:
+        app (Ariadne): 初始化
+        group (Group): 发送的群
+    """
+    await app.send_group_message(
+        group,
+        MessageChain(
+            Plain(
+                f"草图帮助\n获取草图命令: {KEY}\n草图上传命令(认证管理员): {UPLOAD}\n添加管理员命令(超级管理员): 添加管理员[@QQ/QQ]"
+            )
+        ),
+    )
