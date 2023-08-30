@@ -1,5 +1,6 @@
 import os
 import time
+import random
 
 import requests
 from graia.ariadne.app import Ariadne
@@ -18,6 +19,7 @@ UPLOAD = "草图上传"
 KEY = "来个草图"
 DIAOTU = "diaotu"
 SUPERADMIN = ["1582891850"]
+MONGO_URL = "mongodb://zxxhz:zxxhz@localhost:27017/"
 
 
 @channel.use(
@@ -37,7 +39,7 @@ async def diaotu_upload(
     Returns:
         _type_: _description_
     """
-    with MongoClient("mongodb://zxxhz:zxxhz@localhost:27017/") as client:
+    with MongoClient(MONGO_URL) as client:
         admin = client.caotu.admin
         admin_search = {"qq": str(member.id)}
         if admin.find_one(admin_search) is None:
@@ -56,7 +58,7 @@ async def diaotu_upload(
             image_url = image.get_first(Image).url
             image_id = image.get_first(Image).id
             # 连接数据库存入图片名字,并判断是否有重复的图片id
-            with MongoClient("mongodb://zxxhz:zxxhz@localhost:27017/") as client:
+            with MongoClient(MONGO_URL) as client:
                 photo = client.caotu.photos
                 photo_add = {
                     "time": time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
@@ -104,9 +106,9 @@ async def diaotu_send(app: Ariadne, group: Group):
         app (Ariadne): 初始化
         group (Group): 发送的群
     """
-    with MongoClient("mongodb://zxxhz:zxxhz@localhost:27017/") as client:
+    with MongoClient(MONGO_URL) as client:
         photo = client.caotu.photos
-        photo_name = list(photo.find().limit(1))[0]["photo_name"]
+        photo_name = photo.aggregate([{"$sample": {"size": 1}}]).next()["photo_name"]
 
     with open(f"./{DIAOTU}/{photo_name}", "rb") as f:
         image_bytes = f.read()
@@ -137,7 +139,7 @@ async def admin_add(
     if "@" in message:
         message = message.split("@")[1]
     # 连接 MongoDB 数据库
-    with MongoClient("mongodb://zxxhz:zxxhz@localhost:27017/") as client:
+    with MongoClient(MONGO_URL) as client:
         # 获取 admin 集合
         admin = client.caotu.admin
         # 创建一个新的管理员文档，包含"qq"字段和相应的值
