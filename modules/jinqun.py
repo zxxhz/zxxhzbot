@@ -6,7 +6,7 @@ from graia.ariadne.event.mirai import MemberJoinRequestEvent
 from graia.ariadne.message.chain import MessageChain
 from graia.saya import Channel
 from graia.saya.builtins.broadcast.schema import ListenerSchema
-from pymongo import MongoClient
+from motor.motor_asyncio import AsyncIOMotorClient
 
 channel = Channel.current()
 patterns = [
@@ -36,7 +36,7 @@ async def jinqun(
             event.source_group, MessageChain(f"已通过{event.nickname}的入群申请，欢迎进群！")
         )
     # 连接 MongoDB 数据库
-    with MongoClient("mongodb://zxxhz:zxxhz@localhost:27017/") as client:
+    with AsyncIOMotorClient("mongodb://zxxhz:zxxhz@localhost:27017/") as client:
         # 获取 user 集合
         user = client.jinqun.user
         # 创建一个新的文档，包含字段和相应的值
@@ -49,4 +49,4 @@ async def jinqun(
         # TODO: 生成一段时间内NAS机型的热门程度图表(得鸽好久)
 
         # 插入新的文档
-        user.insert_one(user_add)
+        await user.insert_one(user_add)
