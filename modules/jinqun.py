@@ -9,6 +9,11 @@ from graia.saya.builtins.broadcast.schema import ListenerSchema
 from pymongo import MongoClient
 
 channel = Channel.current()
+patterns = [
+    r"威联通",
+    r"群晖",
+    r"\d{3,5}",
+]
 
 
 @channel.use(ListenerSchema(listening_events=[MemberJoinRequestEvent]))
@@ -25,7 +30,7 @@ async def jinqun(
     await app.send_group_message(
         event.source_group, MessageChain(f"申请人：{event.nickname}\n{event.message}")
     )
-    if re.search(r"\d{3,5}", event.message):
+    if any(re.search(pattern, event.message) for pattern in patterns):
         await event.accept()
         await app.send_group_message(
             event.source_group, MessageChain(f"已通过{event.nickname}的入群申请，欢迎进群！")
