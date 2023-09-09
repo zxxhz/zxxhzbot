@@ -1,6 +1,6 @@
 import os
-import time
 import random
+import time
 
 import requests
 from graia.ariadne.app import Ariadne
