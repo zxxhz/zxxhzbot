@@ -10,7 +10,7 @@ from graia.ariadne.model import Group, Member
 from graia.ariadne.util.interrupt import FunctionWaiter
 from graia.saya import Channel
 from graia.saya.builtins.broadcast import ListenerSchema
-from motor.motor_asyncio import AsyncIOMotorClient
+from pymongo import MongoClient
 
 channel = Channel.current()
 UPLOAD = "草图上传"
@@ -23,27 +23,26 @@ MONGO_URL = "mongodb://zxxhz:zxxhz@localhost:27017/"
 @channel.use(
     ListenerSchema(listening_events=[GroupMessage], decorators=[DetectPrefix(UPLOAD)])
 )
-async def diaotu_upload(
-    app: Ariadne, group: Group, message: MessageChain, member: Member
-):
+async def diaotu_upload(app: Ariadne, group: Group, member: Member):
     """上传草图
 
     Args:
         app (Ariadne): Ariadne 应用实例
         group (Group): 发送的群
-        message (MessageChain): 接收到的消息
         member (Member): 发送者
 
     Returns:
-        None: 无返回值
+        None: 添加超时
+        True: 添加成功
+        False: 添加失败
     """
     # 检查发送者是否是管理员
-    with AsyncIOMotorClient(MONGO_URL) as client:
+    with MongoClient(MONGO_URL) as client:
         admin = client.caotu.admin
-        admin_search = await admin.find_one({"qq": str(member.id)})
+        admin_search = admin.find_one({"qq": str(member.id)})
         if admin_search is None:
             # 如果不是管理员，发送提示消息并返回
-            await app.send_message(group, MessageChain(Plain("你不是管理员不能添加表情￣へ￣")))
+            await app.send_group_message(group, MessageChain(Plain("你不是管理员不能添加表情￣へ￣")))
             return
 
     # 发送上传表情的提示消息
@@ -58,7 +57,7 @@ async def diaotu_upload(
             image = waiter_message
 
             if image.display != "[图片]":
-                await app.send_message(
+                await app.send_group_message(
                     group, MessageChain(Plain(f"请在发送{UPLOAD}后发送要上传的图片"))
                 )
                 return False  # 如果消息不是图片，返回 Fasle
@@ -67,7 +66,7 @@ async def diaotu_upload(
             image_id = image.get_first(Image).id
 
             # 连接数据库存入图片名字,并判断是否有重复的图片id
-            with AsyncIOMotorClient(MONGO_URL) as client:
+            with MongoClient(MONGO_URL) as client:
                 photo = client.caotu.photos
                 photo_add = {
                     "time": time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
@@ -77,15 +76,17 @@ async def diaotu_upload(
                 }
 
                 query = {"photo_name": image_id}
-                query_result = await photo.find_one(query)
+                query_result = photo.find_one(query)
 
                 if query_result:
                     # 如果图片已存在，发送消息
-                    await app.send_message(group, MessageChain(Plain("数据库中已存在相同的图片!")))
+                    await app.send_group_message(
+                        group, MessageChain(Plain("数据库中已存在相同的图片!"))
+                    )
                     return False
 
                 # 如果图片不存在，则插入数据并保存图片
-                photo.insert_one(photo_add)
+                await photo.insert_one(photo_add)
 
             r = requests.get(image_url, timeout=10)
             with open(f"./{DIAOTU}/{image_id}", mode="wb") as f:
@@ -105,6 +106,7 @@ async def diaotu_upload(
 
     # 处理失败情况
     if result is False:
+        await app.send_message(group, MessageChain(Plain("添加成功")))
         return
 
     # 处理成功情况
@@ -124,24 +126,20 @@ async def diaotu_send(app: Ariadne, group: Group):
         app (Ariadne): Ariadne 应用实例，用于发送消息。
         group (Group): 目标群聊对象。
     """
-    # 使用异步方式连接到 MongoDB
-    async with AsyncIOMotorClient(MONGO_URL) as client:
+    # 连接到 MongoDB
+    with MongoClient(MONGO_URL) as client:
         # 获取 photo 集合
         photo = client.caotu.photos
 
-        # 执行异步聚合操作，获取随机图片文档
-        cursor = photo.aggregate([{"$sample": {"size": 1}}])
-
-        async for doc in cursor:
-            # 从文档中获取图片文件名
-            photo_name = doc["photo_name"]
+        # 获取随机图片文档 从文档中获取图片文件名
+        photo_name = photo.aggregate([{"$sample": {"size": 1}}]).next()["photo_name"]
 
     # 打开图片文件并读取其内容
     with open(f"./{DIAOTU}/{photo_name}", "rb") as f:
         image_bytes = f.read()
 
     # 使用 Ariadne 发送包含图片的消息
-    await app.send_message(group, MessageChain(Image(data_bytes=image_bytes)))
+    await app.send_group_message(group, MessageChain(Image(data_bytes=image_bytes)))
 
 
 @channel.use(ListenerSchema(listening_events=[GroupMessage]))
@@ -168,7 +166,7 @@ async def admin_add(
     if "@" in message:
         message = message.split("@")[1]
     # 连接 MongoDB 数据库
-    with AsyncIOMotorClient(MONGO_URL) as client:
+    with MongoClient(MONGO_URL) as client:
         # 获取 admin 集合
         admin = client.caotu.admin
         # 创建一个新的管理员文档，包含"qq"字段和相应的值
@@ -177,14 +175,14 @@ async def admin_add(
             "qq": message,
         }
         # 使用 find_one 方法查询集合中是否已存在该管理员，如果不存在则插入新的文档
-        existing_admin = await admin.find_one({"qq": message})
+        existing_admin = admin.find_one({"qq": message})
         if existing_admin is None:
-            await admin.insert_one(admin_add)
+            admin.insert_one(admin_add)
             # 添加成功后发送消息通知
-            await app.send_message(group, MessageChain(Plain("添加管理员成功")))
+            await app.send_group_message(group, MessageChain(Plain("添加管理员成功")))
             return
     # 如果已存在，则发送消息告知该管理员已存在
-    await app.send_message(group, MessageChain(Plain("此管理员已存在数据库中")))
+    await app.send_group_message(group, MessageChain(Plain("此管理员已存在数据库中")))
 
 
 @channel.use(
