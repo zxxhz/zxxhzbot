@@ -36,14 +36,11 @@ async def diaotu_upload(app: Ariadne, group: Group, member: Member):
         True: 添加成功
         False: 添加失败
     """
+
     # 检查发送者是否是管理员
-    with MongoClient(MONGO_URL) as client:
-        admin = client.caotu.admin
-        admin_search = admin.find_one({"qq": str(member.id)})
-        if admin_search is None:
-            # 如果不是管理员，发送提示消息并返回
-            await app.send_group_message(group, MessageChain(Plain("你不是管理员不能添加表情￣へ￣")))
-            return
+    if not is_admin(member.id):
+        await app.send_group_message(group, MessageChain(Plain("你不是管理员不能添加表情￣へ￣")))
+        return None
 
     # 发送上传表情的提示消息
     await app.send_message(group, MessageChain(Plain("请在1分钟内发送要收藏的表情,超时自动失效")))
@@ -53,66 +50,66 @@ async def diaotu_upload(app: Ariadne, group: Group, member: Member):
         waiter_message: MessageChain, group_two: Group, member_two: Member
     ):
         # 检查消息是否来自正确的群和发送者
-        if group_two == group and member_two == member:
-            image = waiter_message
+        if group_two != group or member_two != member:
+            return None
 
-            if image.display != "[图片]":
+        image = waiter_message
+
+        if image.display != "[图片]":
+            await app.send_group_message(
+                group, MessageChain(Plain(f"请在发送{UPLOAD}后发送要上传的图片"))
+            )
+            return False  # 如果消息不是图片，返回 Fasle
+
+        image_url = image.get_first(Image).url
+        image_id = image.get_first(Image).id
+
+        # 连接数据库存入图片名字,并判断是否有重复的图片id
+        with MongoClient(MONGO_URL) as client:
+            photo = client.caotu.photos
+            photo_add = {
+                "time": time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
+                "qun": group.id,
+                "qq": member.id,
+                "photo_name": image_id,
+            }
+
+            query = {"photo_name": image_id}
+            query_result = photo.find_one(query)
+
+            if query_result:
+                # 如果图片已存在，发送消息
                 await app.send_group_message(
-                    group, MessageChain(Plain(f"请在发送{UPLOAD}后发送要上传的图片"))
+                    group, MessageChain(Plain("数据库中已存在相同的图片!"))
                 )
-                return False  # 如果消息不是图片，返回 Fasle
+                return False
 
-            image_url = image.get_first(Image).url
-            image_id = image.get_first(Image).id
+            # 如果图片不存在，则插入数据并保存图片
+            await photo.insert_one(photo_add)
 
-            # 连接数据库存入图片名字,并判断是否有重复的图片id
-            with MongoClient(MONGO_URL) as client:
-                photo = client.caotu.photos
-                photo_add = {
-                    "time": time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
-                    "qun": group.id,
-                    "qq": member.id,
-                    "photo_name": image_id,
-                }
+        r = requests.get(image_url, timeout=10)
+        with open(f"./{DIAOTU}/{image_id}", mode="wb") as f:
+            f.write(r.content)
 
-                query = {"photo_name": image_id}
-                query_result = photo.find_one(query)
-
-                if query_result:
-                    # 如果图片已存在，发送消息
-                    await app.send_group_message(
-                        group, MessageChain(Plain("数据库中已存在相同的图片!"))
-                    )
-                    return False
-
-                # 如果图片不存在，则插入数据并保存图片
-                await photo.insert_one(photo_add)
-
-            r = requests.get(image_url, timeout=10)
-            with open(f"./{DIAOTU}/{image_id}", mode="wb") as f:
-                f.write(r.content)
-
-            # TODO: 以后添加给图片编号
-
-            return True
+        return True
 
     # 等待图片消息，最长等待时间为60秒
     result = await FunctionWaiter(waiter, [GroupMessage]).wait(timeout=60)
 
-    # 处理超时情况
-    if result is None:
-        await app.send_message(group, MessageChain(Plain("添加超时")))
-        return
+    match result:
+        # 处理超时或失败情况
+        case None:
+            await app.send_message(group, MessageChain(Plain("添加失败")))
+            return
 
-    # 处理失败情况
-    if result is False:
-        await app.send_message(group, MessageChain(Plain("添加成功")))
-        return
+        # 处理成功情况
+        case True:
+            await app.send_message(group, MessageChain(Plain("添加成功")))
+            return
 
-    # 处理成功情况
-    if result is True:
-        await app.send_message(group, MessageChain(Plain("添加成功")))
-        return
+        # 其他情况
+        case _:
+            return
 
 
 @channel.use(
@@ -120,7 +117,7 @@ async def diaotu_upload(app: Ariadne, group: Group, member: Member):
 )
 async def diaotu_send(app: Ariadne, group: Group):
     """
-    异步函数用于从 MongoDB 中获取随机图片并发送到指定的群聊。
+    用于从 MongoDB 中获取随机图片并发送到指定的群聊。
 
     Args:
         app (Ariadne): Ariadne 应用实例，用于发送消息。
@@ -203,3 +200,21 @@ async def caotu_help(app: Ariadne, group: Group):
             )
         ),
     )
+
+
+async def is_admin(qq: int):
+    """判读是否为管理员
+
+    Args:
+        qq (int): qq号
+
+    Returns:
+        True: 是管理员
+        False: 不是管理员
+    """
+    with MongoClient(MONGO_URL) as client:
+        admin = client.caotu.admin
+        admin_search = admin.find_one({"qq": str(qq)})
+        if admin_search is not None:
+            return True  # 是管理员
+        return False  # 不是管理员
