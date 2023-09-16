@@ -38,7 +38,7 @@ async def diaotu_upload(app: Ariadne, group: Group, member: Member):
     """
 
     # 检查发送者是否是管理员
-    if not is_admin(member.id):
+    if not await is_admin(member.id):
         await app.send_group_message(group, MessageChain(Plain("你不是管理员不能添加表情￣へ￣")))
         return None
 
@@ -99,13 +99,19 @@ async def diaotu_upload(app: Ariadne, group: Group, member: Member):
     match result:
         # 处理超时或失败情况
         case None:
-            await app.send_message(group, MessageChain(Plain("添加失败")))
+            await app.send_message(group, MessageChain(Plain("添加超时")))
             return
 
         # 处理成功情况
         case True:
             await app.send_message(group, MessageChain(Plain("添加成功")))
             return
+        
+        # 处理失败情况
+        case False:
+            await app.send_message(group, MessageChain(Plain("添加失败")))
+            return
+
 
         # 其他情况
         case _:
