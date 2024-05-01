@@ -1,0 +1,35 @@
+[project]
+name = "zxxhzbot"
+version = "0.1.0"
+description = "zxxhz's bot"
+authors = [
+    {name = "zxxhz", email = "ou0897@qq.com"},
+]
+dependencies = [
+    "graia-ariadne[full]>=0.11.7",
+    "pymongo>=4.5.0",
+    "graiax-playwright>=0.2.7",
+    "requests>=2.31.0",
+    "launart>=0.6.4",
+    "creart>=0.3.0",
+    "manager>=2.0.5",
+    "motor>=3.3.1",
+    "wheel>=0.41.2",
+    "setuptools>=68.2.0",
+    "reload>=0.9",
+    "asyncio>=3.4.3",
+    "aliyun-python-sdk-alidns>=3.0.7",
+    "aliyun-python-sdk-core>=2.14.0",
+    "huaweicloudsdkcore>=3.1.77",
+    "huaweicloudsdkdns>=3.1.77",
+    "tencentcloud-sdk-python>=3.0.1074",
+    "aiohttp>=3.9.1",
+    "feedparser>=6.0.11",
+]
+requires-python = ">=3.11"
+readme = "README.md"
+license = {text = "AGPL-3.0-Only"}
+
+[build-system]
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"
