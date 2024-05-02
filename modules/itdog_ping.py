@@ -31,17 +31,19 @@ async def ping(
     """
     keyword = message.display.strip()
     await app.send_message(group, MessageChain(Plain("已收到请求，请稍等")))
-    if re.search(domain_pattern,keyword):
+    if re.search(domain_pattern, keyword):
         await visit(app=app, group=group, type="domain", keyword=keyword)
 
-    elif re.search(ipv4_pattern,keyword):
+    elif re.search(ipv4_pattern, keyword):
         await visit(app=app, group=group, type="ipv4", keyword=keyword)
 
-    elif re.search(ipv6_pattern,keyword):
+    elif re.search(ipv6_pattern, keyword):
         await visit(app=app, group=group, type="ipv6", keyword=keyword)
 
     else:
-        await app.send_message(group, MessageChain(Plain("无法识别的关键字,仅支持IPV4/6和域名")))
+        await app.send_message(
+            group, MessageChain(Plain("无法识别的关键字,仅支持IPV4/6和域名"))
+        )
 
 
 async def visit(app: Ariadne, group: Group, type: str, keyword: str):
@@ -70,7 +72,7 @@ async def visit(app: Ariadne, group: Group, type: str, keyword: str):
         viewport={"width": 800, "height": 10},
         device_scale_factor=1.5,
     ) as page:
-        await page.goto(url+keyword)
+        await page.goto(url + keyword)
         await page.get_by_role("button", name=" 单次测试").click()
         await page.get_by_text("关闭所有广告").first.click()
         await asyncio.sleep(10)

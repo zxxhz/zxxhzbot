@@ -11,9 +11,11 @@ from aliyunsdkalidns.request.v20150109 import UpdateDomainRecordRequest
 from aliyunsdkalidns.request.v20150109 import AddDomainRecordRequest
 
 
-rc_format = 'json'
-class AliApi():
-    def __init__(self, ACCESSID, SECRETKEY, REGION='cn-hongkong'):
+rc_format = "json"
+
+
+class AliApi:
+    def __init__(self, ACCESSID, SECRETKEY, REGION="cn-hongkong"):
         self.access_key_id = ACCESSID
         self.access_key_secret = SECRETKEY
         self.region = REGION
@@ -23,7 +25,7 @@ class AliApi():
         request = DeleteDomainRecordRequest.DeleteDomainRecordRequest()
         request.set_RecordId(record)
         request.set_accept_format(rc_format)
-        result = clt.do_action(request).decode('utf-8')
+        result = clt.do_action(request).decode("utf-8")
         result = json.JSONDecoder().decode(result)
         return result
 
@@ -35,7 +37,20 @@ class AliApi():
         request.set_RRKeyWord(sub_domain)
         request.set_Type(record_type)
         request.set_accept_format(rc_format)
-        result = clt.do_action(request).decode('utf-8').replace('DomainRecords', 'data', 1).replace('Record', 'records', 1).replace('RecordId', 'id').replace('Value', 'value').replace('Line', 'line').replace('telecom', '电信').replace('unicom', '联通').replace('mobile', '移动').replace('oversea', '境外').replace('default', '默认')
+        result = (
+            clt.do_action(request)
+            .decode("utf-8")
+            .replace("DomainRecords", "data", 1)
+            .replace("Record", "records", 1)
+            .replace("RecordId", "id")
+            .replace("Value", "value")
+            .replace("Line", "line")
+            .replace("telecom", "电信")
+            .replace("unicom", "联通")
+            .replace("mobile", "移动")
+            .replace("oversea", "境外")
+            .replace("default", "默认")
+        )
         result = json.JSONDecoder().decode(result)
         return result
 
@@ -59,11 +74,13 @@ class AliApi():
         request.set_Value(value)
         request.set_TTL(ttl)
         request.set_accept_format(rc_format)
-        result = clt.do_action(request).decode('utf-8')
+        result = clt.do_action(request).decode("utf-8")
         result = json.JSONDecoder().decode(result)
         return result
-        
-    def change_record(self, domain, record_id, sub_domain, value, record_type, line, ttl):
+
+    def change_record(
+        self, domain, record_id, sub_domain, value, record_type, line, ttl
+    ):
         clt = client.AcsClient(self.access_key_id, self.access_key_secret, self.region)
         request = UpdateDomainRecordRequest.UpdateDomainRecordRequest()
         request.set_RR(sub_domain)
@@ -83,7 +100,6 @@ class AliApi():
         request.set_Value(value)
         request.set_TTL(ttl)
         request.set_accept_format(rc_format)
-        result = clt.do_action(request).decode('utf-8')
+        result = clt.do_action(request).decode("utf-8")
         result = json.JSONDecoder().decode(result)
         return result
-

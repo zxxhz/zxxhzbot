@@ -9,10 +9,13 @@ from graia.saya.builtins.broadcast import ListenerSchema
 
 channel = Channel.current()
 
+
 @channel.use(
     ListenerSchema(
         listening_events=[GroupMessage],
-        decorators=[FuzzyMatch("来个草图", min_rate=0.6)], # min_rate 限定了最低匹配阈值
+        decorators=[
+            FuzzyMatch("来个草图", min_rate=0.6)
+        ],  # min_rate 限定了最低匹配阈值
     )
 )
 async def on_fuzzy_match(app: Ariadne, group: Group, chain: MessageChain):

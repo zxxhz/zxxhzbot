@@ -33,7 +33,8 @@ async def jinqun(
     if any(re.search(pattern, event.message) for pattern in patterns):
         await event.accept()
         await app.send_group_message(
-            event.source_group, MessageChain(f"已通过{event.nickname}的入群申请，欢迎进群！")
+            event.source_group,
+            MessageChain(f"已通过{event.nickname}的入群申请，欢迎进群！"),
         )
     # 连接 MongoDB 数据库
     with MongoClient("mongodb://zxxhz:zxxhz@localhost:27017/") as client:
