@@ -21,4 +21,4 @@ channel = Channel.current()
 async def on_fuzzy_match(app: Ariadne, group: Group, chain: MessageChain):
     await app.send_message(group, MessageChain(Plain("rate")))
     return
-    # 我们就假定 rate >= 0.8 是对的吧
+    # 我们就假定 rate >= 0.8 是对的
