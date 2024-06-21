@@ -15,14 +15,14 @@ channel = Channel.current()
 async def ai_help(
     app: Ariadne, group: Group, message: MessageChain = DetectPrefix("ai帮助")
 ):
-    app.send_group_message(group, MessageChain(Plain("欢迎使用\n第一次使用请先选择模型'选择模型 1'或'选择模型 2'\n模型1: gpt-3.5-turbo模型2: gpt-4o\n使用'ai 文本'进行对话")))
+    await app.send_group_message(group, MessageChain(Plain("欢迎使用\n第一次使用请先选择模型'选择模型 1'或'选择模型 2'\n模型1: gpt-3.5-turbo模型2: gpt-4o\n使用'ai 文本'进行对话")))
 
 @channel.use(ListenerSchema(listening_events=[GroupMessage]))
 async def choose_model(
     app: Ariadne, group: Group, member: Member, message: MessageChain = DetectPrefix("选择模型")
 ):
     if not message.strip() in ["1","2"] :
-        app.send_group_message(group, MessageChain(Plain("请输入数字")))
+        await app.send_group_message(group, MessageChain(Plain("请输入数字")))
         return None
     model = message.strip()
 
@@ -48,4 +48,4 @@ async def choose_model(
 async def ai_duihua(
     app: Ariadne, group: Group, member: Member, message: MessageChain = DetectPrefix("ai")
 ):
-    app.send_group_message(group, MessageChain(Plain("没写好呢,你急什么")))
+    await app.send_group_message(group, MessageChain(Plain("没写好呢,你急什么")))
