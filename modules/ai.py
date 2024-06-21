@@ -19,7 +19,7 @@ async def ai_help(
 
 @channel.use(ListenerSchema(listening_events=[GroupMessage]))
 async def choose_model(
-    app: Ariadne, group: Group, member: Member.id, message: MessageChain = DetectPrefix("选择模型")
+    app: Ariadne, group: Group, member: Member, message: MessageChain = DetectPrefix("选择模型")
 ):
     if not message.strip() in ["1","2"] :
         app.send_group_message(group, MessageChain(Plain("请输入数字")))
@@ -32,7 +32,7 @@ async def choose_model(
         user = client.ai.user
         # 创建一个新的文档，包含字段和相应的值
         user = {
-            "user": member,
+            "user": member.id,
             "model": model,
         }
         query_result = user.find_one(user)
@@ -46,6 +46,6 @@ async def choose_model(
 
 @channel.use(ListenerSchema(listening_events=[GroupMessage]))
 async def ai_duihua(
-    app: Ariadne, group: Group, member: Member.id, message: MessageChain = DetectPrefix("ai")
+    app: Ariadne, group: Group, member: Member, message: MessageChain = DetectPrefix("ai")
 ):
     app.send_group_message(group, MessageChain(Plain("没写好呢,你急什么")))
