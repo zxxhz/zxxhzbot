@@ -1,4 +1,8 @@
 {
     "Codegeex.CompletionModel": "CodeGeeX Pro[Beta]",
-    "Codegeex.CommitMessageStyle": "ConventionalCommits"
+    "Codegeex.CommitMessageStyle": "ConventionalCommits",
+    "python.analysis.typeCheckingMode": "basic",
+    "python.analysis.extraPaths": [
+        "./__pypackages__/3.11/lib"
+    ]
 }

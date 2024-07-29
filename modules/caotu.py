@@ -13,7 +13,12 @@ from graia.saya.builtins.broadcast import ListenerSchema
 from pymongo import MongoClient
 
 channel = Channel.current()
-UPLOAD = ["草图上传","上传草图","草图添加","添加草图"]  # 用于标识草图上传操作的字符串
+UPLOAD = [
+    "草图上传",
+    "上传草图",
+    "草图添加",
+    "添加草图",
+]  # 用于标识草图上传操作的字符串
 KEY = "来个草图"  # 指定的触发关键词
 DIAOTU = "diaotu"  # 可能用于指定某项操作或标识
 SUPERADMIN = ["1582891850"]  # 超级管理员ID列表
