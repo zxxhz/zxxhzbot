@@ -12,6 +12,8 @@ channel = Channel.current()
 patterns = [
     r"威联通",
     r"群晖",
+    r"极空间",
+    r"绿联",
     r"\d{3,5}",
 ]
 
