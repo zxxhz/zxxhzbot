@@ -15,7 +15,7 @@ channel = Channel.current()
 
 @channel.use(
     ListenerSchema(
-        listening_events=[GroupMessage], decorators=[DetectPrefix("获取群成员")]
+        listening_events=[GroupMessage], decorators=[DetectPrefix("备份群成员列表")]
     )
 )
 async def diaotu_upload(app: Ariadne, group: Group, member: Member):
@@ -38,7 +38,7 @@ async def diaotu_upload(app: Ariadne, group: Group, member: Member):
     member_list = await app.get_member_list(group)
     filename = f"{time.strftime('%Y%m%d-%H:%M:%S',time.localtime())}_{group.id}.csv"
     await save_members_to_csv(member_list, filename)
-    with open(f"./qunyuanbackup/{filename}.csv", "rb") as f:
+    with open(f"./qunyuanbackup/{filename}", "rb") as f:
         csv_bytes = f.read()
     await app.upload_file(csv_bytes, "group", group, name=filename)
     await app.send_group_message(
