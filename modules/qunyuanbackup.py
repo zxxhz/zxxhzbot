@@ -39,7 +39,7 @@ async def diaotu_upload(app: Ariadne, group: Group, member: Member):
     await app.send_group_message(
         group, MessageChain([Plain(f"群成员信息已获取，共有{len(member_list)}人")])
     )
-    await save_members_to_csv(member_list,f"{time.strftime('%Y%m%d',time.localtime())}_{group.id}")
+    await save_members_to_csv(member_list,f"{time.strftime('%Y%m%d-%H:%M:%S',time.localtime())}_{group.id}")
     await app.send_group_message(group, MessageChain([Plain("群成员信息已保存")]))
     # await app.send_group_message(
     #     group, MessageChain([Plain("默认自动上传数据到群文件")])
@@ -57,23 +57,16 @@ async def save_members_to_csv(data, filename):
     parsed_data = []
     for member in data:
         member_data = {}
-        member = str(member)
-        member_data["id"] = int(member.split("(")[1].split(",")[0].split("=")[1])
-        member_data["name"] = member.split("name='")[1].split("',")[0]
-        member_data["permission"] = member.split("permission=<")[1].split(">")[0]
-        member_data["join_timestamp"] = int(
-            member.split("join_timestamp=")[1].split(",")[0]
-        )
-        member_data["last_speak_timestamp"] = int(
-            member.split("last_speak_timestamp=")[1].split(",")[0]
-        )
-        member_data["mute_time"] = member.split("mute_time=")[1].split(",")[0]
-        member_data["group_id"] = int(member.split("group=Group(id=")[1].split(",")[0])
-        member_data["group_name"] = member.split("group=Group(name='")[1].split("',")[0]
-        member_data["account_perm"] = member.split("account_perm=<")[1].split(">")[0]
-        member_data["muteTimeRemaining"] = int(
-            member.split("muteTimeRemaining=")[1].split(")")[0]
-        )
+        member_data["id"] = member.id
+        member_data["name"] = member.name
+        member_data["permission"] = member.permission
+        member_data["join_timestamp"] = member.join_timestamp
+        member_data["last_speak_timestamp"] = member.last_speak_timestamp
+        member_data["mute_time"] = member.mute_time
+        member_data["group_id"] = member.group.id
+        member_data["group_name"] = member.group.name
+        member_data["account_perm"] = member.group.account_perm
+        member_data["muteTimeRemaining"] = member.muteTimeRemaining
         parsed_data.append(member_data)
 
     # 异步写入CSV
