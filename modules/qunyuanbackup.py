@@ -36,7 +36,7 @@ async def diaotu_upload(app: Ariadne, group: Group, member: Member):
         group, MessageChain([Plain("正在获取群成员信息，请稍候...")])
     )
     member_list = await app.get_member_list(group)
-    filename = f"{time.strftime('%Y%m%d-%H:%M:%S',time.localtime())}_{group.id}.csv"
+    filename = f"{time.strftime('%Y%m%d-%H%M%S',time.localtime())}_{group.id}.csv"
     await save_members_to_csv(member_list, filename)
     with open(f"./qunyuanbackup/{filename}", "rb") as f:
         csv_bytes = f.read()
