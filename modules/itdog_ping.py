@@ -43,9 +43,7 @@ async def ping(
         await visit(app=app, group=group, type="ipv6", keyword=keyword)
 
     else:
-        await app.send_message(
-            group, MessageChain(Plain("无法识别的关键字,仅支持IPV4/6和域名"))
-        )
+        return
 
 
 async def visit(app: Ariadne, group: Group, type: str, keyword: str):
