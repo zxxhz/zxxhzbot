@@ -30,14 +30,16 @@ async def ping(
         message (MessageChain, optional): 接受到的消息默认删除("ping")
     """
     keyword = message.display.strip()
-    await app.send_message(group, MessageChain(Plain("已收到请求，请稍等")))
     if re.search(domain_pattern, keyword):
+        await app.send_message(group, MessageChain(Plain("已收到请求，请稍等")))
         await visit(app=app, group=group, type="domain", keyword=keyword)
 
     elif re.search(ipv4_pattern, keyword):
+        await app.send_message(group, MessageChain(Plain("已收到请求，请稍等")))
         await visit(app=app, group=group, type="ipv4", keyword=keyword)
 
     elif re.search(ipv6_pattern, keyword):
+        await app.send_message(group, MessageChain(Plain("已收到请求，请稍等")))
         await visit(app=app, group=group, type="ipv6", keyword=keyword)
 
     else:
