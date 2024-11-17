@@ -75,7 +75,7 @@ async def visit(app: Ariadne, group: Group, type: str, keyword: str):
         await page.goto(url + keyword)
         await page.get_by_role("button", name=" 单次测试").click()
         await asyncio.sleep(7)
-        img = await page.locator("canvas").screenshot(
+        img = await page.locator('//*[@id="china_map"]/div[1]/canvas').screenshot(
             type="jpeg", quality=80, scale="device"
         )
 
