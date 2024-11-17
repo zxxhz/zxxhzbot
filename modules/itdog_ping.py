@@ -74,8 +74,7 @@ async def visit(app: Ariadne, group: Group, type: str, keyword: str):
     ) as page:
         await page.goto(url + keyword)
         await page.get_by_role("button", name=" 单次测试").click()
-        await page.get_by_text("关闭所有广告").first.click()
-        await asyncio.sleep(10)
+        await asyncio.sleep(7)
         img = await page.locator("canvas").screenshot(
             type="jpeg", quality=80, scale="device"
         )
