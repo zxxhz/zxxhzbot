@@ -16,7 +16,7 @@ channel = Channel.current()
     )
 )
 async def print_bot_help(app: Ariadne, group: Group, member: Member):
-    text = "zxbot命令菜单\n草图帮助\nping"
+    text = "zxbot命令菜单\n草图帮助\nping\n百度搜索"
     if member.id == 1582891850:
         text += "\ncf优选ip\n备份群成员列表"
     await app.send_message(group, MessageChain(Plain(text)))
