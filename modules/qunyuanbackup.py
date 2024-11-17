@@ -18,7 +18,7 @@ channel = Channel.current()
         listening_events=[GroupMessage], decorators=[DetectPrefix("备份群成员列表")]
     )
 )
-async def diaotu_upload(app: Ariadne, group: Group, member: Member):
+async def backup(app: Ariadne, group: Group, member: Member):
     """_summary_
 
     Args:
