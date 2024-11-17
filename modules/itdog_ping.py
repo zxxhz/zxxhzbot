@@ -72,6 +72,9 @@ async def visit(app: Ariadne, group: Group, type: str, keyword: str):
         viewport={"width": 800, "height": 10},
         device_scale_factor=1.5,
     ) as page:
+        with open('./modules/stealth.min.js','r',encoding="utf-8") as f:
+            js=f.read()
+        await page.add_init_script(js)
         await page.goto(url + keyword)
         await page.get_by_role("button", name=" 单次测试").click()
         await asyncio.sleep(10)
