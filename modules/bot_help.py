@@ -34,7 +34,6 @@ async def print_bot_help(app: Ariadne, group: Group, member: Member):
     
     # 管理员命令列表
     admin_commands = [
-        "cf优选ip",
         "备份群成员列表"
     ]
     
