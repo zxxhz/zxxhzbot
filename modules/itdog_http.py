@@ -15,7 +15,7 @@ channel = Channel.current()
 
 
 @channel.use(ListenerSchema(listening_events=[GroupMessage]))
-async def ping(
+async def http_speedtest(
     app: Ariadne, group: Group, message: MessageChain = DetectPrefix("网站测速")
 ):
     """
