@@ -17,33 +17,39 @@ ipv6_pattern = r"^([\da-fA-F]{1,4}:){6}((25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(25[0
 domain_pattern = r"^([a-zA-Z0-9-]+\.){1,}[a-zA-Z]{2,}$"
 
 
-@channel.use(ListenerSchema(listening_events=[GroupMessage]))
-async def ping(
-    app: Ariadne, group: Group, message: MessageChain = DetectPrefix("ping")
-):
+@channel.use(ListenerSchema(listening_events=[GroupMessage], decorators=[DetectPrefix("ping")]))
+async def ping(app: Ariadne, group: Group, message: MessageChain):
     """
-    itdogping并发送搜索结果截图
+    使用itdog.cn的ping工具测试指定域名或IP的连通性,并返回全国各地的测速结果图表
 
     Args:
-        app (Ariadne): 初始化
-        group (Group): 发送的群
-        message (MessageChain, optional): 接受到的消息默认删除("ping")
+        app (Ariadne): Ariadne应用实例
+        group (Group): 消息发送的群组
+        message (MessageChain): 接收到的消息,没去除前缀"ping"
     """
-    keyword = message.display.strip()
-    if re.search(domain_pattern, keyword):
-        await app.send_message(group, MessageChain(Plain("已收到请求，请稍等")))
-        await visit(app=app, group=group, type="domain", keyword=keyword)
-
-    elif re.search(ipv4_pattern, keyword):
-        await app.send_message(group, MessageChain(Plain("已收到请求，请稍等")))
-        await visit(app=app, group=group, type="ipv4", keyword=keyword)
-
-    elif re.search(ipv6_pattern, keyword):
-        await app.send_message(group, MessageChain(Plain("已收到请求，请稍等")))
-        await visit(app=app, group=group, type="ipv6", keyword=keyword)
-
-    else:
+    # 去除前缀"ping"并清理空格
+    keyword = message.display.strip()[4:].strip()
+    
+    # 如果关键词为空则返回
+    if not keyword:
         return
+        
+    # 使用字典映射不同类型的匹配模式
+    patterns = {
+        "domain": domain_pattern,
+        "ipv4": ipv4_pattern, 
+        "ipv6": ipv6_pattern
+    }
+    
+    # 遍历匹配模式判断类型
+    for type_name, pattern in patterns.items():
+        if re.search(pattern, keyword):
+            await app.send_message(group, MessageChain(Plain("已收到请求，请稍等")))
+            await visit(app=app, group=group, type=type_name, keyword=keyword)
+            return
+            
+    # 如果都不匹配则提示格式错误
+    await app.send_message(group, MessageChain(Plain("请输入正确的域名或IP地址格式")))
 
 
 async def visit(app: Ariadne, group: Group, type: str, keyword: str):
@@ -59,27 +65,42 @@ async def visit(app: Ariadne, group: Group, type: str, keyword: str):
     Returns:
         None
     """
+    # 使用常量定义URL
+    BASE_URL = "https://www.itdog.cn/ping/"
+    IPV6_URL = "https://www.itdog.cn/ping_ipv6/"
+    
+    # 缓存stealth.js内容
+    STEALTH_JS = None
+    if not STEALTH_JS:
+        with open('./modules/stealth.min.js','r',encoding="utf-8") as f:
+            STEALTH_JS = f.read()
+            
     launart = app.launch_manager
     browser = launart.get_interface(PlaywrightBrowser)
-    if type == "domain":
-        url = "https://www.itdog.cn/ping/"
-    if type == "ipv4":
-        url = "https://www.itdog.cn/ping/"
-    if type == "ipv6":
-        url = "https://www.itdog.cn/ping_ipv6/"
+    url = IPV6_URL if type == "ipv6" else BASE_URL
 
-    async with browser.page(  # 此 API 启用了自动上下文管理
+    async with browser.page(
         viewport={"width": 800, "height": 10},
         device_scale_factor=1.5,
     ) as page:
-        with open('./modules/stealth.min.js','r',encoding="utf-8") as f:
-            js=f.read()
-        await page.add_init_script(js)
-        await page.goto(url + keyword)
-        await page.get_by_role("button", name=" 单次测试").click()
-        await asyncio.sleep(10)
-        img = await page.locator('//*[@id="china_map"]').screenshot(
-            type="jpeg", quality=80, scale="device"
-        )
-
-    await app.send_message(group, MessageChain(Image(data_bytes=img)))
+        # 添加反反爬虫脚本
+        await page.add_init_script(STEALTH_JS)
+        
+        try:
+            # 设置超时时间
+            await page.goto(url + keyword, timeout=10000)
+            await page.get_by_role("button", name=" 单次测试").click()
+            await asyncio.sleep(10)
+            
+            # 等待地图元素出现并截图
+            map_element = page.locator('//*[@id="china_map"]')
+            img = await map_element.screenshot(
+                type="jpeg",
+                quality=80,
+                scale="device"
+            )
+            
+            await app.send_message(group, MessageChain(Image(data_bytes=img)))
+            
+        except Exception as e:
+            await app.send_message(group, MessageChain(f"访问出错: {str(e)}"))
